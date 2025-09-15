@@ -16,7 +16,9 @@ import java.security.NoSuchAlgorithmException
 import java.security.cert.Certificate
 import java.security.cert.CertificateEncodingException
 import androidx.annotation.NonNull
-import java9.util.concurrent.CompletableFuture
+import java.util.concurrent.Future
+import java.util.concurrent.Executors
+import java.util.concurrent.Callable
 
 class SslPinningPlugin: MethodCallHandler, FlutterPlugin {
 
@@ -63,8 +65,12 @@ class SslPinningPlugin: MethodCallHandler, FlutterPlugin {
         val timeout: Int = arguments.get("timeout") as Int
         val type: String = arguments.get("type") as String
 
-        val get: Boolean = CompletableFuture.supplyAsync { this.checkConnexion(serverURL, allowedFingerprints, httpHeaderArgs, timeout, type, httpMethod) }.get()
-
+       val executor = Executors.newSingleThreadExecutor()
+val future: Future<Boolean> = executor.submit(Callable {
+    this.checkConnexion(serverURL, allowedFingerprints, httpHeaderArgs, timeout, type, httpMethod)
+})
+val get: Boolean = future.get()
+executor.shutdown()
         if(get) {
             result.success("CONNECTION_SECURE")
         }else {
